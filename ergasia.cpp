@@ -107,61 +107,28 @@ class Avatar : public Entity {
             return Potions;
         }
 
-        void Move(char* Array,bool *k) {
+        void IncrPotions(){
+            Potions++;
+        }
 
-            if (GetAsyncKeyState(VK_UP) && (*k == 0))
+        void Move(short int MoveNum) {
+            switch (MoveNum)
             {
-                if (Array[1] == '-' || Array[1] == 'P'){
-                    if (Array[1] == 'P')
-                        Potions++;
-                    x--;
-                    *k=1;
-                }
-            }
-            else if (GetAsyncKeyState(VK_UP)) {
-                *k = 0;
-            }
-
-            if (GetAsyncKeyState(VK_LEFT) && (*k == 0))
-            {
-                if (Array[3] == '-' || Array[3] == 'P'){
-                    if (Array[3] == 'P')
-                        Potions++;
-                    x--;
-                   *k=1;
-                }
-            }
-            else if (GetAsyncKeyState(VK_LEFT))
-            {
-                *k = 0;
-            }
-
-            if (GetAsyncKeyState(VK_RIGHT) && (*k==0)) {
-                if (Array[5] == '-' || Array[5] == 'P'){
-                    if (Array[5] == 'P')
-                        Potions++;
-                    x++;
-                    *k=1;
-                }
-            }
-            else if (GetAsyncKeyState(VK_RIGHT)) {
-                *k=0;
-            }
-
-            if (GetAsyncKeyState(VK_DOWN) && (*k==0)) {
-                if (Array[7] == '-' || Array[7] == 'P'){
-                    if (Array[7] == 'P')
-                        Potions++;
-                    x--;
-                    *k=1;
-                }
-             
-            }
-            else if (GetAsyncKeyState(VK_DOWN))
-            {
-                *k=0;
+            case 1:         // Κινείται πάνω
+                this->y--;
+                break;
+            case 3:         // Κινείται αριστερά
+                this->x--;
+                break;
+            case 4:          // Κινείται δεξιά
+                this->x++;
+                break;
+            case 6:         // Κινείται κάτω
+                this->y++;
+                break;
             }
         }
+        
         void Heal(vector<NPC*> NPCvec)
         {
             if (Potions == 0) {
@@ -255,6 +222,7 @@ class Map{
     private:
         char **Grid;
     public: // S T P
+    
 
         vector<NPC*> objvecV;
         vector<NPC*> objvecW;
@@ -280,6 +248,12 @@ class Map{
 
             Grid[rand() % n][rand() % m] = 'P';
         }
+        
+        void UpdateAvatar(int y, int x, Avatar* obj){
+            Grid[y][x]='-';
+            Grid[obj->getY()][obj->getX()]=obj->getID();
+        }
+
 
         void SetCoordinates(Entity* Obj) //εδώ γίνεται το λάθος 
         {
@@ -293,14 +267,13 @@ class Map{
                     char* array = new char;
                     array = Scan(y, x);
 
-                   /* int i = 0;
+                    /*int i = 0;
                     if (Obj->getID() == 'w' || Obj->getID() == 'W' || Obj->getID() == 'V')
                     {
-                        for (i = 0; i < 7; i+=2){
+                        for (i = 1; i < 7; i+=2){
                             if (array[i] != 'E' && array[i] != 'S' && array[i] != 'T' && array[i] != 'P') break;
+                            if (i == 3) i--;
                         }
-                        
-                        delete[] array;
                     }
 
                     else if (Obj->getID() == 'v')
@@ -309,15 +282,18 @@ class Map{
                         {
                             if (array[i] != 'E' && array[i] != 'S' && array[i] != 'T' && array[i] != 'P') break;
                         }
-                        
-                        delete[] array;
                     }
-                    if (i == 9 && (Obj->getID() == 'w' || Obj->getID() == 'W' || Obj->getID() == 'V') || i == 8 && Obj->getID() == 'v') break;*/
+
+                    if (i == 8)
+                    {
+                        delete[] array;
+                        break;
+                    }*/
 
                     // Αρχικοποίηση των συντεταγμένων του NPC ή του Avatar
                     Obj->SetYX(y, x);
                     Grid[y][x]=Obj->getID();
-                    delete [] array;
+                    delete[] array;
                     return;
                 }
 
@@ -333,13 +309,11 @@ class Map{
             {
                 objvecV.push_back(new Vampire);
                 SetCoordinates(objvecV.at(i));
-                cout<<objvecV.at(i)->getID()<<endl;
             }
             for (int i = 0; i < NumOfNPC; i++)
             {   
                 objvecW.push_back(new Werewolf);
                 SetCoordinates(objvecW.at(i));
-                cout<<objvecW.at(i)->getID()<<endl;
             }
         }
 
@@ -378,7 +352,6 @@ class Map{
             {
                 if (Target == objvec.at(i)) break;
             }
-            cout << i << endl;
             return i;
         }
 
@@ -435,18 +408,11 @@ class Map{
         {
             char* array = new char;
             array = Scan(protagonist->getY(), protagonist->getX());
-            for (int i=0;i<8;i++){
-                cout << array[i] << endl;
-            }
 
             short int block = rand() % 8;
-            cout << "block :" << array[block] << endl;
-            cout << "id " << protagonist->getID() << endl;
-            
 
             // Η θέση που επιλέγεται δεν μπορεί προσπελαστεί από το NPC, οπότε, αυτό θα μείνει ακίνητο
             if (array[block] == 'E' || array[block] == 'S' || array[block] == 'T' || array[block] == 'P' || array[block] == 'W' || array[block] == 'V') {
-                cout << "MENEI STASIMO" << endl;
                 delete[] array; //EDW EXEI BUG! Diagrafetai to id tou protagonist alla oxi sto idio, sto vector ! 
                 return;
             }
@@ -467,7 +433,6 @@ class Map{
                 if (protagonist->getPotions() > 0 && Target->getCurrentHP() < Target->getCapHP()){
                     protagonist->Heal(Target);
                 }
-                cout << Target->getID()<<endl;
 
                 // Αν δεν ικανοποιούνται οι απαραίτητες συνθήκες για την Heal(), τότε το NPC μένει ακίνητο
                 delete[] array;
@@ -513,7 +478,6 @@ class Map{
 
             // Στην περίπτωση που ένα werewolf NPC πάρει διαγώνια, άδεια θέση, μένει ακίνητο
             if (block % 2 == 0 && protagonist->getID() == 'w') {
-                cout << "PITHANH MALAKIA " << endl;
                 delete[] array;
                 //delete Target;
                 return;
@@ -548,87 +512,198 @@ class Map{
 };
 
 class Game{
+    private:
+        Map newMap;
+        Avatar Player;
+        bool k=0;
+        bool DaylightCycle=0;
+
     public:
-        void Input(bool *k,Map newMap,Avatar Player)
+        Game(char Supp) : Player(Supp)
         {
-            Player.Move(newMap.Scan(Player.getY(), Player.getX()), k);
+            newMap.SetCoordinates(&Player);
+            newMap.SpawnEntities();
+        }        
+        
+        // Εκτελεί μία ενέργεια για κάθε NPC - Σηματοδοτεί το πέρας ενος γύρου
+        void Update(){
+            for (int i=0;i<newMap.objvecW.size();i++){
+                newMap.Action(newMap.objvecW.at(i));
+            }
+            for (int i=0;i<newMap.objvecV.size();i++){
+                newMap.Action(newMap.objvecV.at(i));
+            }
+        };
+        
+        // Παύση του παιχνιδιού
+        void PauseGame(){
+            cout << "Active Werewolves: " << newMap.objvecW.size() << endl;
+            cout << "Active Vampires: " << newMap.objvecV.size() << endl;
+            cout << "Potions: " << Player.getPotion() << endl;
+            system("pause");
+        }
+
+        // Έξοδος από το παιχνίδι
+        void ExitGame(){
+            cout << "Thanks for Playing. Goodbye" << endl;
+            Sleep(2000);
+            exit(0);
+        }
+        
+        void Input()
+        {
+            // Όταν πατηθεί το πλήκτρο P, τότε καλείται η συνάρτηση PauseGame για παύση του παιχνιδιού
+            if (GetAsyncKeyState(0x50) && k==0){ 
+                k=1;
+                PauseGame();
+            }
+
+            // Όταν πατηθεί το πλήκτρο E, τότε καλείται η συνάρτηση ExitGame για έξοδο από το παιχνίδι
+            if (GetAsyncKeyState(0x45) && k==0)
+            {
+                ExitGame();
+            }
+
+            // Όταν πατηθεί το πλήκτρο H, τότε γίνεται επούλωση όλων των μελών της ομάδας που υποστηρίζει ο παίκτης   
+            if (GetAsyncKeyState(0x48) &&  k==0){
+                if ((DaylightCycle == 0) && (Player.getID()=='V')){
+                    Player.Heal(newMap.objvecV);
+                    k=1;
+                    return;
+                }  
+
+                else if ((DaylightCycle == 1) && (Player.getID()=='W')){
+                    Player.Heal(newMap.objvecW);
+                    k=1;
+                    return;
+                }
+                
+                else {
+                    cout << "You can not heal your team right now" << endl;
+                    k=1;
+                    Sleep(1000);
+                    return;
+                }
+            }
+            
+            char* array = new char;
+            array = newMap.Scan(Player.getY(),Player.getX());
+
+            if (GetAsyncKeyState(VK_UP) && k==0){
+                if (array[1] == '-' || array[1] == 'P') {
+                    if (array[1] == 'P') Player.IncrPotions();
+                    int PrevY=Player.getY();
+                    int PrevX=Player.getX();
+                    Player.Move(1);
+                    newMap.UpdateAvatar(PrevY,PrevX,&Player);
+                    k=1;
+                    delete[] array;
+                    return;
+                }
+            }
+            else if (GetAsyncKeyState(VK_UP)) k=0;
+
+            if (GetAsyncKeyState(VK_DOWN) && k==0){
+                if (array[6] == '-' || array[6] == 'P') {
+                    if (array[6] == 'P') Player.IncrPotions();
+                    int PrevY=Player.getY();
+                    int PrevX=Player.getX();
+                    Player.Move(6);
+                    newMap.UpdateAvatar(PrevY,PrevX,&Player);;
+                    k=1;
+                    delete[] array;
+                    return;
+                }
+            }
+            else if (GetAsyncKeyState(VK_DOWN)) k=0;
+
+            if (GetAsyncKeyState(VK_LEFT) && k==0){
+                if (array[3] == '-' || array[3] == 'P') {
+                    if (array[3] == 'P') Player.IncrPotions();
+                    int PrevY=Player.getY();
+                    int PrevX=Player.getX();
+                    Player.Move(3);
+                    newMap.UpdateAvatar(PrevY,PrevX,&Player);
+                    k=1;
+                    delete[] array;
+                    return;
+                }
+            }
+            else if(GetAsyncKeyState(VK_LEFT)) k=0;
+
+            if (GetAsyncKeyState(VK_RIGHT) && k==0){
+                if (array[4] == '-' || array[4] == 'P') {
+                    if (array[4] == 'P') Player.IncrPotions();
+                    int PrevY=Player.getY();
+                    int PrevX=Player.getX();
+                    Player.Move(4);
+                    newMap.UpdateAvatar(PrevY,PrevX,&Player);
+                    k=1;
+                    delete[] array;
+                    return;
+                }
+            }
+            else if(GetAsyncKeyState(VK_RIGHT)) k=0;
+
+            else
+            {
+                k=0;
+                delete[] array;
+            }
+        }
+
+        // Αλλαγή από μέρα σε νύχτα και αντίστροφα
+        void ChangeDayTime()
+        {
+            if (DaylightCycle == 0) DaylightCycle = 1; // Όταν DaylightCycle = 1, τότε είναι νυχτα
+            else DaylightCycle = 0;                    // Όταν DaylightCycle = 1, τότε είναι μερα
+        }
+        
+        void MainLoop(){
+            for(int l = 0; 1 ; l++)
+            {
+                // Διαχείριση της εναλλαγής της μέρας σε νυχτα
+                if (l == 10)
+                {
+                    ChangeDayTime();
+                    l = 0;
+                }
+
+                Update();
+                Input();
+                newMap.print();
+                Sleep(1000);
+                system("cls"); 
+
+                // Συνθήκη ολοκλήρωσης του παιχνιδιού
+                if (newMap.objvecV.size() == 0 || newMap.objvecW.size() == 0 ){
+                    cout << "Game Over" << endl;
+
+                    if (newMap.objvecV.size() == 0) cout << "Werewolves Won" << endl;
+                    else cout << "Vampires Won" << endl;
+
+                    Sleep(2000);
+                    ExitGame();
+                }
+            }
         }
 };
 
 
 
 int main() {
+    // Προετοιμασίαα του παιχνιδιού
     srand(time(0));
-    n=10;
-    m=12;
+    char Sup;
+    cout << "Enter Grid Size n: " << endl;
+    cin >> n;
+    cout << "Enter Grid Size m: " << endl;
+    cin >> m;
+    cout << "Enter either W to support team Werewolves or V to support team Vampires: " << endl;
+    cin >> Sup;
+    Game newGame(Sup);
 
-    Map newMap;
-    Game newGame;
-    Avatar Player('W'); // Το Avatar εισάγεται στο map πριν τα NPC, ώστε να μην εμποδίσει τις κινήσεις του
-    newMap.SetCoordinates(&Player);
-
-    newMap.SpawnEntities();
-    int num = 0;
-    while (1){
-
-        cout << endl;
-        for (int i=0; i<newMap.objvecW.size(); i++) {
-            newMap.print();
-            cout << i << endl;
-            // if (newMap.objvecW.at(i)->getID() != 'w'){
-            //     cout << "TI SKATA EGINE!" << endl;
-            //     cout << newMap.objvecW.at(i)->getID() << endl;
-                cout << "CURRENT HP:" << newMap.objvecW.at(i)->getCurrentHP() << endl;
-                cout << "Potions: " << newMap.objvecW.at(i)->getPotions() << endl;
-            //     cout << newMap.objvecW.size() << endl;
-            //     cout << i << endl;
-            //     return 0;
-            // }
-            cout << newMap.objvecW.at(i)->getID() << " "<<newMap.objvecW.at(i)->getY() << " " <<newMap.objvecW.at(i)->getX()  << endl;
-            newMap.Action(newMap.objvecW.at(i));
-            cout << "Kinish:" << newMap.objvecW.at(i)->getID() << " "<<newMap.objvecW.at(i)->getY() << " " <<newMap.objvecW.at(i)->getX()  << endl;
-
-            for (int i = 0; i<newMap.objvecW.size();i++){
-                cout << newMap.objvecW.at(i)->getID() <<endl;
-            }
-            cout << endl;
-
-        }   
-        for (int i=0; i<newMap.objvecV.size(); i++) {
-            newMap.print();
-            cout << i << endl;
-            // if (newMap.objvecV.at(i)->getID() != 'v'){
-            //     cout << "TI SKATA EGINE!" << endl;
-            //     cout << newMap.objvecV.at(i)->getID() << endl;
-                cout << "CURRENT HP:" << newMap.objvecV.at(i)->getCurrentHP() << endl;
-                cout << "Potions: " << newMap.objvecV.at(i)->getPotions() << endl;
-            //     cout << newMap.objvecV.size() << endl;
-            //     cout << i << endl;
-            //     return 0;
-            // }
-            cout << newMap.objvecV.at(i)->getID() << " "<<newMap.objvecV.at(i)->getY() << " " <<newMap.objvecV.at(i)->getX()  << endl;
-            newMap.Action(newMap.objvecV.at(i));
-            cout << "Kinish:" << newMap.objvecV.at(i)->getID() << " "<<newMap.objvecV.at(i)->getY() << " " <<newMap.objvecV.at(i)->getX()  << endl;
-
-            for (int i = 0; i<newMap.objvecV.size();i++){
-                cout << newMap.objvecV.at(i)->getID() <<endl;
-            }
-            cout << endl;
-
-        }   
-        
-        //Sleep(2000);
-        newMap.print();
-        cout << endl;
-        if (newMap.objvecV.size() == 0 || newMap.objvecW.size() == 0 ){
-            cout << "Paixnidi teleiwse" << endl;
-            break;
-        }
-
-       
-    }
-    
-    newMap.print();
+    newGame.MainLoop();
     
     return 0;
 }
