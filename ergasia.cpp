@@ -16,7 +16,8 @@ class Entity{
         char ID;
 
     public:
-        virtual void Move(){
+        // Η Move() χειρίζεται την κίνηση ενος NPC ή του Avatar μεσα στον χάρτη και παίρνει ως όρισμα το index ενος array από την Scan() παρακάτω
+        virtual void Move(short int MoveN){
             return;
         };
 
@@ -54,11 +55,6 @@ class NPC : public Entity {
             Potions = rand() % 3;
             Power_Lvl = (rand() % 3) + 1;
             Defence_Lvl = (rand() % 2) + 1;
-        }
-
-        // Η Move() του καθε NPC χειρίζεται την κίνησή του μεσα στον χάρτη και παίρνει ως όρισμα το index ενος array από την Scan() παρακάτω
-        virtual void Move(short int MoveN){
-            return;
         }
 
         short int getPower_Lvl(){
@@ -134,12 +130,16 @@ class Avatar : public Entity {
             if (Potions == 0) {
                 cout << "You don't have enough potions for this action." << endl;
                 Sleep(1000);
+                system("cls"); 
             }
             else {
                 for (int i=0; i<NPCvec.size(); i++){
                     NPCvec.at(i)->MAXCurrentHP();
                 }
                 Potions--;
+                cout << "You healed your team." << endl;
+                Sleep(1000);
+                system("cls");
             }    
         }
         
@@ -227,6 +227,7 @@ class Map{
         vector<NPC*> objvecV;
         vector<NPC*> objvecW;
 
+        // Αρχικοποίηση του Map με τα εμπόδια και το επιπλέον φίλτρο επούλωσης
         Map(){
             this->Grid = new char*[n];
             for (int i=0;i<n;i++)
@@ -249,62 +250,61 @@ class Map{
             Grid[rand() % n][rand() % m] = 'P';
         }
         
+        // Ανανέωση της θέσης του Avatar στο Map
         void UpdateAvatar(int y, int x, Avatar* obj){
             Grid[y][x]='-';
             Grid[obj->getY()][obj->getX()]=obj->getID();
         }
 
-
-        void SetCoordinates(Entity* Obj) //εδώ γίνεται το λάθος 
+        // Αναδρομική συνάρτηση εύρεσης και αρχικοποίησης συντεταγμένων των NPC και του Avatar
+        void SetCoordinates(Entity* Obj)
         {
+            // Εύρεση καινούργιων συντεταγμένων για το NPC ή το Avatar
             int y = rand() % n;
             int x = rand() % m;
-            while(1)
+
+            if (this->Grid[y][x] == '-')
             {
-                if (this->Grid[y][x] == '-')
+                // Έλεγχος για τον αποκλεισμό των NPC και του Avatar από terrain (γη, νερό, γιατρικό, όρια του map), κατά την αρχή του παιχνιδιού
+                char* array = new char;
+                array = Scan(y, x);
+                
+                int i = 0;
+                if (Obj->getID() == 'w' || Obj->getID() == 'W' || Obj->getID() == 'V')
                 {
-                    // Έλεγχος για τον αποκλεισμό των NPC και του Avatar από terrain (γη, νερό, γιατρικό, όρια του map), κατά την αρχή του παιχνιδιού
-                    char* array = new char;
-                    array = Scan(y, x);
-
-                    /*int i = 0;
-                    if (Obj->getID() == 'w' || Obj->getID() == 'W' || Obj->getID() == 'V')
-                    {
-                        for (i = 1; i < 7; i+=2){
-                            if (array[i] != 'E' && array[i] != 'S' && array[i] != 'T' && array[i] != 'P') break;
-                            if (i == 3) i--;
-                        }
+                    for (i = 1; i <= 7; i+=2){
+                        if (array[i] != 'E' && array[i] != 'S' && array[i] != 'T' && array[i] != 'P') break;
+                        if (i == 3) i--;
                     }
+                }
 
-                    else if (Obj->getID() == 'v')
+                else if (Obj->getID() == 'v')
+                {
+                    for (i = 0; i < 8; i++)
                     {
-                        for (i = 0; i < 8; i++)
-                        {
-                            if (array[i] != 'E' && array[i] != 'S' && array[i] != 'T' && array[i] != 'P') break;
-                        }
+                        if (array[i] != 'E' && array[i] != 'S' && array[i] != 'T' && array[i] != 'P') break;
                     }
+                }
 
-                    if (i == 8)
-                    {
-                        delete[] array;
-                        break;
-                    }*/
-
-                    // Αρχικοποίηση των συντεταγμένων του NPC ή του Avatar
-                    Obj->SetYX(y, x);
-                    Grid[y][x]=Obj->getID();
+                if (i == 8 || i == 9)
+                {
+                    SetCoordinates(Obj);
                     delete[] array;
                     return;
                 }
 
-                // Εύρεση καινούργιων συντεταγμένων για το NPC ή το Avatar
-                y = rand() % n;
-                x = rand() % m;
+                // Αρχικοποίηση των συντεταγμένων του NPC ή του Avatar
+                Obj->SetYX(y, x);
+                Grid[y][x]=Obj->getID();
+                delete[] array;
+                return;
             }
+            else SetCoordinates(Obj);
         }
 
+        // Αρχικοποίηση των NPC και τοποθέτητσή τους στο vector της αντίστοιχης ομάδας
         void SpawnEntities(){
-            int NumOfNPC=rand() % (n*m/15);
+            int NumOfNPC=(rand() % (n*m/15))+1;
             for (int i = 0; i < NumOfNPC; i++)
             {
                 objvecV.push_back(new Vampire);
@@ -317,8 +317,7 @@ class Map{
             }
         }
 
-        //H scan επιστρεφει array bool για τις θέσεις γύρω από μία θέση για κάθε αντικείμενο
-
+        //H scan επιστρεφει array char για τις θέσεις γύρω από μία θέση για κάθε αντικείμενο
         char* Scan(int y, int x)
         {
             // Το NearPositions[] περιλαμβάνει το max 3*3 πλαίσιο του Grid, εκτός της θέσης με την οποία καλείται, με την σειρά: από πάνω αριστερά έως κάτω δεξιά
@@ -330,7 +329,7 @@ class Map{
                 {
                     if (i < 0 || i > n - 1 || j < 0 || j > m - 1)
                     {
-                        NearPositions[NP_index] = 'E'; //empty, εκτός πίνακα "Grid"
+                        NearPositions[NP_index] = 'E'; // Empty, εκτός πίνακα "Grid"
                         NP_index++;
                         continue;
                     }
@@ -355,6 +354,7 @@ class Map{
             return i;
         }
 
+        // Επιστροφή των NPC από το κατάλληλο vector
         NPC* GetNPC(vector<NPC*> objvec,int &x,int &y,short int block){
             // Αντιστοίχιση των συντεταγμένων του array σε συντεταγμένες του χάρτη
             switch (block) {
@@ -395,8 +395,9 @@ class Map{
                     break;
             }
             
+            // Αναζήτηση του NPC στο vector του
             int i;
-            for (i=0;i<objvec.size();i++) { //to tsekara kai den exei provlhma, kanonika to gyrnaei. sthn heal kai sthn attack yparxei provlhma
+            for (i=0;i<objvec.size();i++) {
                 if (objvec.at(i)->getX() == x && objvec.at(i)->getY() == y) {
                      break;
                 }    
@@ -404,6 +405,7 @@ class Map{
             return objvec.at(i);
         }
         
+        // Συνάρτηση που αποφασίζει την ενέργεια που θα εκτελέσει ένα NPC σε έναν γύρο, με βαση τις θέσεις γύρω του (ενδεχομένως αναδρομική)
         void Action(NPC* protagonist)
         {
             char* array = new char;
@@ -419,7 +421,8 @@ class Map{
             
             int x1 = protagonist->getX();
             int y1 = protagonist->getY();
-            NPC* Target = new NPC;
+            // NPC* Target = new NPC;
+            NPC* Target;
 
             // Η θέση που επιλέγεται περιέχει σύμμαχο (NPC της ίδιας ομάδας)
             if (array[block] == protagonist->getID()) {
@@ -436,7 +439,6 @@ class Map{
 
                 // Αν δεν ικανοποιούνται οι απαραίτητες συνθήκες για την Heal(), τότε το NPC μένει ακίνητο
                 delete[] array;
-                //delete Target;
                 return;
             }
 
@@ -470,30 +472,30 @@ class Map{
                         }
                     }
                 }
-                      
+                else Action(protagonist);
+
                 delete[] array;
-                //delete Target;
                 return;       
             }
 
-            // Στην περίπτωση που ένα werewolf NPC πάρει διαγώνια, άδεια θέση, μένει ακίνητο
-            if (block % 2 == 0 && protagonist->getID() == 'w') {
+            // Στην περίπτωση που ένα werewolf NPC πάρει διαγώνια, άδεια θέση, κάνει εκ νέου κίνηση
+            if ((block == 0 || block == 2 || block == 5 || block == 7 ) && protagonist->getID() == 'w') {
                 delete[] array;
-                //delete Target;
+                Action(protagonist);
                 return;
             }
 
             // Αν η θέση που επιλεχθεί είναι άδεια, τότε το NPC κινείται σε αυτή
-            else if (array[block] == '-') {  //Για κάποιον λόγο σε αυτό το σημείο ενώ το ελέγχει δεν ξέρει αν υπάρχει ή όχι κάποιο αντικείμενο
+            else if (array[block] == '-') {
                 Grid[protagonist->getY()][protagonist->getX()] = '-';
                 protagonist->Move(block);
                 Grid[protagonist->getY()][protagonist->getX()] = protagonist->getID();
             }
 
-            //delete Target;
             delete[] array;
         }
 
+        // Εκτύπωση του Map
         void print(){
             for (int i=0;i<n;i++){
                 for (int j=0;j<m;j++){
@@ -519,6 +521,7 @@ class Game{
         bool DaylightCycle=0;
 
     public:
+        // Αρχικοποίηση του παιχνιδιού
         Game(char Supp) : Player(Supp)
         {
             newMap.SetCoordinates(&Player);
@@ -533,6 +536,7 @@ class Game{
             for (int i=0;i<newMap.objvecV.size();i++){
                 newMap.Action(newMap.objvecV.at(i));
             }
+            
         };
         
         // Παύση του παιχνιδιού
@@ -550,12 +554,14 @@ class Game{
             exit(0);
         }
         
+        // Συνάρτηση που ελέγχει την είσοδο του πληκτρολογίου για τον χειρισμο του παιχνιδιού και του Avatar
         void Input()
         {
             // Όταν πατηθεί το πλήκτρο P, τότε καλείται η συνάρτηση PauseGame για παύση του παιχνιδιού
             if (GetAsyncKeyState(0x50) && k==0){ 
                 k=1;
                 PauseGame();
+                system("cls"); 
             }
 
             // Όταν πατηθεί το πλήκτρο E, τότε καλείται η συνάρτηση ExitGame για έξοδο από το παιχνίδι
@@ -582,14 +588,16 @@ class Game{
                     cout << "You can not heal your team right now" << endl;
                     k=1;
                     Sleep(1000);
+                    system("cls"); 
                     return;
                 }
             }
             
+            // Κίνηση Avatar
             char* array = new char;
             array = newMap.Scan(Player.getY(),Player.getX());
 
-            if (GetAsyncKeyState(VK_UP) && k==0){
+            if (GetAsyncKeyState(VK_UP) && k==0){   // Πάνω βελος
                 if (array[1] == '-' || array[1] == 'P') {
                     if (array[1] == 'P') Player.IncrPotions();
                     int PrevY=Player.getY();
@@ -603,7 +611,7 @@ class Game{
             }
             else if (GetAsyncKeyState(VK_UP)) k=0;
 
-            if (GetAsyncKeyState(VK_DOWN) && k==0){
+            if (GetAsyncKeyState(VK_DOWN) && k==0){ // Κάτω βελος
                 if (array[6] == '-' || array[6] == 'P') {
                     if (array[6] == 'P') Player.IncrPotions();
                     int PrevY=Player.getY();
@@ -617,7 +625,7 @@ class Game{
             }
             else if (GetAsyncKeyState(VK_DOWN)) k=0;
 
-            if (GetAsyncKeyState(VK_LEFT) && k==0){
+            if (GetAsyncKeyState(VK_LEFT) && k==0){ // Αριστερό βελος
                 if (array[3] == '-' || array[3] == 'P') {
                     if (array[3] == 'P') Player.IncrPotions();
                     int PrevY=Player.getY();
@@ -631,7 +639,7 @@ class Game{
             }
             else if(GetAsyncKeyState(VK_LEFT)) k=0;
 
-            if (GetAsyncKeyState(VK_RIGHT) && k==0){
+            if (GetAsyncKeyState(VK_RIGHT) && k==0){    // Δεξι βελος
                 if (array[4] == '-' || array[4] == 'P') {
                     if (array[4] == 'P') Player.IncrPotions();
                     int PrevY=Player.getY();
@@ -672,6 +680,8 @@ class Game{
                 Update();
                 Input();
                 newMap.print();
+                cout << endl;
+                DaylightCycle? cout << "Night" << endl : cout << "Day" << endl ;
                 Sleep(1000);
                 system("cls"); 
 
@@ -701,6 +711,12 @@ int main() {
     cin >> m;
     cout << "Enter either W to support team Werewolves or V to support team Vampires: " << endl;
     cin >> Sup;
+    while (Sup != 'W' && Sup != 'V') {
+        cout << "Please enter a proper character" << endl;
+        cin >> Sup;
+    }
+    system("cls"); 
+    
     Game newGame(Sup);
 
     newGame.MainLoop();
