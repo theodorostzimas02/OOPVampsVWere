@@ -1,4 +1,8 @@
 # OOPVampsVWere
-Fall 2022 - OOP Project with @ZafGeo
+Fall 2022 - OOP Project 
+
+Θεόδωρος Τζίμας 1115202000190 3ο έτος φοίτησης
+
+Ζαφείρης Γεωργιάδης 1115202100019 2ο έτος φοίτησης
 
 Final Version - 21/12/2022 
