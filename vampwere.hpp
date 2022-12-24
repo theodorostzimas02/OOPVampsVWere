@@ -10,8 +10,6 @@ class Vampire : public NPC {
 };
 
 class Werewolf : public NPC {
-    private:
-        int num;
     public:
         Werewolf();
 
