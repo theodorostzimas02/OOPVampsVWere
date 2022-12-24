@@ -200,7 +200,7 @@ void Map::Action(NPC* protagonist)
 
     // Η θέση που επιλέγεται δεν μπορεί προσπελαστεί από το NPC, οπότε, αυτό θα μείνει ακίνητο
     if (array[block] == 'E' || array[block] == 'S' || array[block] == 'T' || array[block] == 'P' || array[block] == 'W' || array[block] == 'V') {
-        delete[] array; //EDW EXEI BUG! Diagrafetai to id tou protagonist alla oxi sto idio, sto vector ! 
+        delete[] array; 
         return;
     }
             
